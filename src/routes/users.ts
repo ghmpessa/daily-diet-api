@@ -12,10 +12,17 @@ export const usersRoutes = async (app: FastifyInstance) => {
 
     const { name, avatarUrl } = createUserBodySchema.parse(req.body)
 
+    const id = randomUUID()
+
     await knex('users').insert({
-      id: randomUUID(),
+      id,
       name,
       avatar_url: avatarUrl
+    })
+
+    res.setCookie('sessionId', id, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7 // 7 days
     })
 
     return res.status(201).send()
