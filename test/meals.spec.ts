@@ -64,11 +64,11 @@ describe('Users', () => {
       })
       .set('Cookie', cookie!)
 
-    const { body: { meals }, status } = await request(app.server)
+    const { body: { meals }, statusCode } = await request(app.server)
       .get('/meals')
       .set('Cookie', cookie!)
 
-    expect(status).toEqual(200)
+    expect(statusCode).toEqual(200)
     expect(meals).toEqual([
       expect.objectContaining({
         title: 'Bacon Duplo',
@@ -99,17 +99,17 @@ describe('Users', () => {
       })
       .set('Cookie', cookie!)
 
-    const { body: { meals }, status } = await request(app.server)
+    const { body: { meals } } = await request(app.server)
       .get('/meals')
       .set('Cookie', cookie!)
 
     const id = meals[0].id
 
-    const { body: { meal } } = await request(app.server)
+    const { body: { meal }, statusCode } = await request(app.server)
       .get(`/meals/${id}`)
       .set('Cookie', cookie!)
 
-    expect(status).toEqual(200)
+    expect(statusCode).toEqual(200)
     expect(meal).toEqual(
       expect.objectContaining({
         title: 'Bacon Duplo',
@@ -117,5 +117,44 @@ describe('Users', () => {
         date,
       })
     )
+  })
+
+  it('should delete a specific meal', async () => {
+    const user = await request(app.server)
+      .post('/users')
+      .send({
+        name: 'username',
+      })
+
+    const cookie = user.get('Set-Cookie')
+
+    const date = new Date(Date.now()).toISOString()
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        title: 'Bacon Duplo',
+        description: 'Bacon Duplo do Aconchego da gula',
+        date,
+        isInsideTheDiet: false,
+      })
+      .set('Cookie', cookie!)
+
+    const { body } = await request(app.server)
+      .get('/meals')
+      .set('Cookie', cookie!)
+
+    const id = body.meals[0].id
+
+    const { statusCode } = await request(app.server)
+      .delete(`/meals/${id}`)
+      .set('Cookie', cookie!)
+
+    const { body: { meals } } = await request(app.server)
+      .get('/meals')
+      .set('Cookie', cookie!)
+
+    expect(statusCode).toEqual(204)
+    expect(meals.length).toEqual(0)
   })
 })
