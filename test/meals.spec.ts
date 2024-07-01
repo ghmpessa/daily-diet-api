@@ -77,4 +77,45 @@ describe('Users', () => {
       })
     ])
   })
+
+  it('should get a specific meal', async () => {
+    const user = await request(app.server)
+      .post('/users')
+      .send({
+        name: 'username',
+      })
+
+    const cookie = user.get('Set-Cookie')
+
+    const date = new Date(Date.now()).toISOString()
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        title: 'Bacon Duplo',
+        description: 'Bacon Duplo do Aconchego da gula',
+        date,
+        isInsideTheDiet: false,
+      })
+      .set('Cookie', cookie!)
+
+    const { body: { meals }, status } = await request(app.server)
+      .get('/meals')
+      .set('Cookie', cookie!)
+
+    const id = meals[0].id
+
+    const { body: { meal } } = await request(app.server)
+      .get(`/meals/${id}`)
+      .set('Cookie', cookie!)
+
+    expect(status).toEqual(200)
+    expect(meal).toEqual(
+      expect.objectContaining({
+        title: 'Bacon Duplo',
+        description: 'Bacon Duplo do Aconchego da gula',
+        date,
+      })
+    )
+  })
 })
