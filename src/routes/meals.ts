@@ -131,4 +131,58 @@ export const mealsRoute = async (app: FastifyInstance) => {
       return res.status(204).send()
     },
   )
+
+  app.get('/summary', async (req, res) => {
+    const { sessionId } = req.cookies
+
+    const totalMeals = Number(
+      (
+        await knex('meals')
+          .where('user_id', sessionId)
+          .count('*', { as: 'totalMeals' }
+          )
+      )[0]['totalMeals']
+    )
+
+    const insideDiet = Number(
+      (
+        await knex('meals')
+          .where({
+            user_id: sessionId,
+            is_inside_the_diet: true
+          })
+          .count('*', { as: 'insideDiet' })
+      )[0]['insideDiet']
+    )
+
+    const outsideDiet = totalMeals - insideDiet
+
+    const meals = await knex('meals')
+      .where('user_id', sessionId)
+      .select('is_inside_the_diet')
+      .orderBy('date');
+
+    let maxStreak = 0;
+    let currentStreak = 0;
+
+    meals.forEach(meal => {
+      if (meal.is_inside_the_diet) {
+        currentStreak += 1;
+        if (currentStreak > maxStreak) {
+          maxStreak = currentStreak;
+        }
+      } else {
+        currentStreak = 0;
+      }
+    });
+
+    const summary = {
+      totalMeals,
+      insideDiet,
+      outsideDiet,
+      maxStreak
+    }
+
+    res.status(200).send({ summary })
+  })
 }
