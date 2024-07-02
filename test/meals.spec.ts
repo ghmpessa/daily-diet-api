@@ -157,4 +157,58 @@ describe('Users', () => {
     expect(statusCode).toEqual(204)
     expect(meals.length).toEqual(0)
   })
+
+  it('should update a specific meal', async () => {
+    const user = await request(app.server)
+      .post('/users')
+      .send({
+        name: 'username',
+      })
+
+    const cookie = user.get('Set-Cookie')
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        title: 'Bacon Duplo',
+        description: 'Bacon Duplo do Aconchego da gula',
+        date: new Date(Date.now()).toISOString(),
+        isInsideTheDiet: false,
+      })
+      .set('Cookie', cookie!)
+
+    const { body } = await request(app.server)
+      .get('/meals')
+      .set('Cookie', cookie!)
+
+    console.log(body.meals)
+
+    const id = body.meals[0].id
+
+    const date = new Date().toISOString()
+
+    await request(app.server)
+      .put(`/meals/${id}`)
+      .send({
+        title: 'Arroz com carne moída',
+        description: 'Tentando ser saudável',
+        date,
+        isInsideTheDiet: true,
+      })
+      .set('Cookie', cookie!)
+      .expect(204)
+
+    const { body: { meal } } = await request(app.server)
+      .get(`/meals/${id}`)
+      .set('Cookie', cookie!)
+      .expect(200)
+
+    expect(meal).toEqual(
+      expect.objectContaining({
+        title: 'Arroz com carne moída',
+        description: 'Tentando ser saudável',
+        date,
+      })
+    )
+  })
 })
