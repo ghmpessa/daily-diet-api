@@ -181,8 +181,6 @@ describe('Users', () => {
       .get('/meals')
       .set('Cookie', cookie!)
 
-    console.log(body.meals)
-
     const id = body.meals[0].id
 
     const date = new Date().toISOString()
@@ -208,6 +206,71 @@ describe('Users', () => {
         title: 'Arroz com carne moída',
         description: 'Tentando ser saudável',
         date,
+      })
+    )
+  })
+
+  it('should return meals summary', async () => {
+    const user = await request(app.server)
+      .post('/users')
+      .send({
+        name: 'username',
+      })
+
+    const cookie = user.get('Set-Cookie')
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        title: 'Bacon Duplo',
+        description: 'Bacon Duplo do Aconchego da gula',
+        date: new Date(Date.now()).toISOString(),
+        isInsideTheDiet: false,
+      })
+      .set('Cookie', cookie!)
+
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        title: 'Arroz com frango',
+        description: 'Saúde',
+        date: new Date(Date.now()).toISOString(),
+        isInsideTheDiet: true,
+      })
+      .set('Cookie', cookie!)
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        title: 'Arroz com carne',
+        description: 'Saúde',
+        date: new Date(Date.now()).toISOString(),
+        isInsideTheDiet: true,
+      })
+      .set('Cookie', cookie!)
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        title: 'Whey',
+        description: 'Saúde',
+        date: new Date(Date.now()).toISOString(),
+        isInsideTheDiet: true,
+      })
+      .set('Cookie', cookie!)
+
+    const { body: { summary } } = await request(app.server)
+      .get('/meals/summary')
+      .set('Cookie', cookie!)
+      .expect(200)
+
+    expect(summary).toEqual(
+      expect.objectContaining({
+        totalMeals: 4,
+        insideDiet: 3,
+        outsideDiet: 1,
+        maxStreak: 3,
       })
     )
   })
